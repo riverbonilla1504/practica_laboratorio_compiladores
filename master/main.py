@@ -5,32 +5,33 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from antlr4 import *
 from antlr4.error.ErrorListener import ConsoleErrorListener
+
 from parser.grammar.DevOpsDSLLexer import DevOpsDSLLexer
 from parser.grammar.DevOpsDSLParser import DevOpsDSLParser
+
+from executor.executor import Executor
+from interpreter.interpreter import Interpreter
 
 
 def main():
     print("[INFO] Iniciando validacion del DSL...\n")
 
-    # Permitir pasar archivo por argumento
     file = "script.dsl"
     if len(sys.argv) > 1:
         file = sys.argv[1]
 
-    # Validar que el archivo existe
     if not os.path.exists(file):
         print(f"[ERROR] No existe el archivo: {file}")
         return
 
-    # Cargar archivo DSL
+    # =========================
+    # LEXER
+    # =========================
     input_stream = FileStream(file)
-
-    # Fase lexica
     lexer = DevOpsDSLLexer(input_stream)
     token_stream = CommonTokenStream(lexer)
     token_stream.fill()
 
-    # Se usa tambien para obtener nombres de token robustos.
     parser = DevOpsDSLParser(token_stream)
 
     print("[INFO] TOKENS GENERADOS POR EL LEXER")
@@ -59,8 +60,9 @@ def main():
 
     print("\n[INFO] Total de tokens (incluyendo EOF):", len(token_stream.tokens), "\n")
 
-    # Fase sintactica
-
+    # =========================
+    # PARSER
+    # =========================
     parser.removeErrorListeners()
     parser.addErrorListener(ConsoleErrorListener())
 
@@ -69,8 +71,20 @@ def main():
     print("[INFO] ARBOL SINTACTICO GENERADO POR EL PARSER")
     print("=" * 70)
     print(tree.toStringTree(recog=parser))
+
     print("\n[INFO] Validacion lexica y sintactica completada.")
-    print("[INFO] Puede continuar con la fase de interpretacion/ejecucion.\n")
+
+    # =========================
+    # INTERPRETER + EXECUTOR
+    # =========================
+    print("\n[INFO] Iniciando interpretacion y ejecucion del DSL...\n")
+
+    executor = Executor()
+    interpreter = Interpreter(executor)
+
+    interpreter.visit(tree)
+
+    print("\n[INFO] Proceso completo finalizado.\n")
 
 
 if __name__ == "__main__":

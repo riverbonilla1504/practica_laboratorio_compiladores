@@ -1,4 +1,5 @@
-from parser.DevOpsDSLVisitor import DevOpsDSLVisitor
+from parser.grammar.DevOpsDSLVisitor import DevOpsDSLVisitor
+
 
 class Interpreter(DevOpsDSLVisitor):
 
@@ -15,6 +16,10 @@ class Interpreter(DevOpsDSLVisitor):
             self.visit(stmt)
 
         print("\n[INFO] Ejecución finalizada")
+
+    def visitStatement(self, ctx):
+        # 🔥 BAJAR AL HIJO REAL
+        return self.visit(ctx.getChild(0))
 
     # =========================
     # COMMANDS
@@ -52,8 +57,8 @@ class Interpreter(DevOpsDSLVisitor):
             print("[DSL] Condición falsa → no se ejecuta acción\n")
 
     def evaluate_condition(self, ctx):
-        node = ctx.ID(0).getText()      # sensor
-        metric = ctx.ID(1).getText()    # temp, cpu
+        node = ctx.ID(0).getText()
+        metric = ctx.ID(1).getText()
         operator = ctx.comparator().getText()
         value = int(ctx.NUMBER().getText())
 
@@ -81,19 +86,11 @@ class Interpreter(DevOpsDSLVisitor):
     # ACTIONS
     # =========================
     def visitAction(self, ctx):
+        node = ctx.ID().getText()
+        script = ctx.STRING().getText().strip('"')
 
-        # Caso: alert()
-        if ctx.getChildCount() == 3:
-            action = ctx.ID().getText()
-            print(f"[ACTION] Ejecutando acción: {action}")
-
-        # Caso: nodo.run("script.sh")
-        elif ctx.STRING():
-            node = ctx.ID().getText()
-            script = ctx.STRING().getText().strip('"')
-
-            print(f"[ACTION] Ejecutando en nodo '{node}': {script}")
-            self.executor.run_on_node(node, script)
+        print(f"[ACTION] Ejecutando en nodo '{node}': {script}")
+        self.executor.run_on_node(node, script)
 
     # =========================
     # PARALLEL
